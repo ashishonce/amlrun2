@@ -97,11 +97,11 @@ def main():
         raise AMLExperimentConfigurationException(f"Could not create an experiment with the specified name {experiment_name}: {exception}")
 
     # Loading run config
-    print("::debug::Loading run config")
+    print("debug::Loading run config")
     run_config = None
     if run_config is None:
         # Loading run config from runconfig yaml file
-        print("::debug::Loading run config from runconfig yaml file")
+        print("Loading run config from runconfig yaml file")
         run_config = load_runconfig_yaml(
             runconfig_yaml_file=parameters.get("runconfig_yaml_file", "/train/run_config.yml")
         )

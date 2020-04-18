@@ -86,10 +86,10 @@ def load_runconfig_yaml(runconfig_yaml_file):
             run_config=run_config
         )
     except TypeError as exception:
-        print(f"::debug::Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}): {exception}")
+        print(f"Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}): {exception}")
         run_config = None
     except FileNotFoundError as exception:
-        print(f"::debug::Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}): {exception}")
+        print(f"Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}): {exception}")
         run_config = None
     return run_config
 
