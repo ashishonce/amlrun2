@@ -113,15 +113,14 @@ def main(args):
     log_confusion_matrix(cm, labels)
     
     # files saved in the "outputs" folder are automatically uploaded into run history
-    joblib.dump(svm_model, os.path.join('outputs', args.modelname))
-    run.log('Model Name', np.str(args.modelname))
+    model_file_name = "model.pkl"
+    joblib.dump(svm_model, os.path.join('outputs', model_file_name))
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--kernel', type=str, default='rbf', help='Kernel type to be used in the algorithm')
     parser.add_argument('--penalty', type=float, default=1.0, help='Penalty parameter of the error term')
-    parser.add_argument('--modelname', type=str, default='model.pkl', help='Name of the model file')
     args = parser.parse_args()
     return args
 
