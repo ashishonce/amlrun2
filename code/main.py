@@ -105,33 +105,33 @@ def main():
         run_config = load_runconfig_yaml(
             runconfig_yaml_file=parameters.get("runconfig_yaml_file", "/train/run_config.yml")
         )
-    if run_config is None:
-        # Loading run config from pipeline yaml file
-        print("::debug::Loading run config from pipeline yaml file")
-        run_config = load_pipeline_yaml(
-            workspace=ws,
-            pipeline_yaml_file=parameters.get("pipeline_yaml_file", "/train/pipeline.yml")
-        )
-    if run_config is None:
-        # Loading run config from python runconfig file
-        print("::debug::Loading run config from python runconfig file")
-        run_config = load_runconfig_python(
-            workspace=ws,
-            runconfig_python_file=parameters.get("runconfig_python_file", "/train/run_config.py"),
-            runconfig_python_function_name=parameters.get("runconfig_python_function_name", "main")
-        )
-    if run_config is None:
-        # Loading values for errors
-        pipeline_yaml_file = parameters.get("pipeline_yaml_file", "/train/pipeline.yml")
-        runconfig_yaml_file = parameters.get("runconfig_yaml_file", "/train/run_config.yml")
-        runconfig_python_file = parameters.get("runconfig_python_file", "/train/run_config.py")
-        runconfig_python_function_name = parameters.get("runconfig_python_function_name", "main")
+    # if run_config is None:
+    #     # Loading run config from pipeline yaml file
+    #     print("::debug::Loading run config from pipeline yaml file")
+    #     run_config = load_pipeline_yaml(
+    #         workspace=ws,
+    #         pipeline_yaml_file=parameters.get("pipeline_yaml_file", "/train/pipeline.yml")
+    #     )
+    # if run_config is None:
+    #     # Loading run config from python runconfig file
+    #     print("::debug::Loading run config from python runconfig file")
+    #     run_config = load_runconfig_python(
+    #         workspace=ws,
+    #         runconfig_python_file=parameters.get("runconfig_python_file", "/train/run_config.py"),
+    #         runconfig_python_function_name=parameters.get("runconfig_python_function_name", "main")
+    #     )
+    # if run_config is None:
+    #     # Loading values for errors
+    #     pipeline_yaml_file = parameters.get("pipeline_yaml_file", "/train/pipeline.yml")
+    #     runconfig_yaml_file = parameters.get("runconfig_yaml_file", "/train/run_config.yml")
+    #     runconfig_python_file = parameters.get("runconfig_python_file", "/train/run_config.py")
+    #     runconfig_python_function_name = parameters.get("runconfig_python_function_name", "main")
 
-        print(f"::error::Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}).")
-        print(f"::error::Error when loading pipeline yaml definition your repository (Path: /{pipeline_yaml_file}).")
-        print(f"::error::Error when loading python script or function in your repository which defines the experiment config (Script path: '/{runconfig_python_file}', Function: '{runconfig_python_function_name}()').")
-        print("::error::You have to provide a yaml definition for your run, a yaml definition of your pipeline or a python script, which returns a runconfig. Please read the documentation for more details.")
-        raise AMLExperimentConfigurationException("You have to provide a yaml definition for your run, a yaml definition of your pipeline or a python script, which returns a runconfig. Please read the documentation for more details.")
+    #     print(f"::error::Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}).")
+    #     print(f"::error::Error when loading pipeline yaml definition your repository (Path: /{pipeline_yaml_file}).")
+    #     print(f"::error::Error when loading python script or function in your repository which defines the experiment config (Script path: '/{runconfig_python_file}', Function: '{runconfig_python_function_name}()').")
+    #     print("::error::You have to provide a yaml definition for your run, a yaml definition of your pipeline or a python script, which returns a runconfig. Please read the documentation for more details.")
+    #     raise AMLExperimentConfigurationException("You have to provide a yaml definition for your run, a yaml definition of your pipeline or a python script, which returns a runconfig. Please read the documentation for more details.")
 
     # Submit run config
     print("::debug::Submitting experiment config")
