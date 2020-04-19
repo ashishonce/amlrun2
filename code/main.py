@@ -11,7 +11,9 @@ from msrest.exceptions import AuthenticationError
 from json import JSONDecodeError
 from utils import AMLConfigurationException, AMLExperimentConfigurationException, required_parameters_provided, mask_parameter, convert_to_markdown, load_pipeline_yaml, load_runconfig_yaml, load_runconfig_python
 
-def submitRun(ws,parameters):
+def submitRun(args):
+    ws,parameters = args[0],args[1];
+    
     # Create experiment
     print("::debug::Creating experiment")
     try:
@@ -193,7 +195,7 @@ def main():
     # check here the number of cpus and create pool accordingly 
     pool = multiprocessing.Pool(processes=8)
     tasks = [(ws,parameter) for parameter in parameters ]
-    results = [pool.apply_async(submitRun, t) for t in tasks]
+    results = pool.map(submitRun, tasks)
     print(results)
 
 if __name__ == "__main__":
