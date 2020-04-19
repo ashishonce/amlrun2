@@ -124,7 +124,7 @@ def submitRun(ws,parameters):
         print(f"::error::Could not register pipeline because you did not pass a pipeline to the action")
 
     print("::debug::Successfully finished Azure Machine Learning Train Action")
-
+    return True
 
 def main():
     # Loading input values
@@ -194,7 +194,7 @@ def main():
     pool = multiprocessing.Pool(processes=8)
     tasks = [(ws,parameter) for parameter in parameters ]
     results = [pool.apply_async(submitRun, t) for t in tasks]
-
+    print(results)
 
 if __name__ == "__main__":
     main()
