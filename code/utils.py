@@ -59,6 +59,10 @@ def mask_parameter(parameter):
 
 
 def load_pipeline_yaml(workspace, pipeline_yaml_file):
+    root = os.environ.get("GITHUB_WORKSPACE", default=None)
+
+    print("::debug::Adding root to system path")
+    sys.path.insert(1, f"{root}")
     try:
         run_config = Pipeline.load_yaml(
             workspace=workspace,
@@ -71,6 +75,10 @@ def load_pipeline_yaml(workspace, pipeline_yaml_file):
 
 
 def load_runconfig_yaml(runconfig_yaml_file):
+    root = os.environ.get("GITHUB_WORKSPACE", default=None)
+
+    print("::debug::Adding root to system path")
+    sys.path.insert(1, f"{root}")
     try:
         run_config = RunConfiguration().load(
             path=runconfig_yaml_file
