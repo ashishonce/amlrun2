@@ -103,7 +103,7 @@ def main():
         # Loading run config from runconfig yaml file
         print("Loading run config from runconfig yaml file")
         run_config = load_runconfig_yaml(
-            runconfig_yaml_file=parameters.get("runconfig_yaml_file", "/train/run_config.yml")
+            runconfig_yaml_file=parameters.get("runconfig_yaml_file", "train/run_config.yml")
         )
     # if run_config is None:
     #     # Loading run config from pipeline yaml file
