@@ -33,4 +33,4 @@ runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - "-v /home/.azure:/root/.azure"
+    - -v "/home/.azure:/root/.azure"
