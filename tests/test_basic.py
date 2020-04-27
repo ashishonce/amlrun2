@@ -25,7 +25,7 @@ def set_env_variables():
 
 def test_credentialErrorException():
     """unit Test to verify that in azure credentials are not present code must raise the error """
-    os.environ["INPUT_AZURE_CREDENTIALS"] = ''
+    os.environ["INPUT_AZURE_CREDENTIALS"] = 'wrongfile.json'
     import main
     import actionutils
     with pytest.raises(actionutils.AMLConfigurationException):
