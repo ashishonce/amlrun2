@@ -4,10 +4,6 @@ import pytest
 import sys
 import json
 from azureml.exceptions import AuthenticationException, ProjectSystemException, AzureMLException, UserErrorException
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 
 @pytest.fixture(autouse=True)
 def set_env_variables():
