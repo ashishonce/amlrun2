@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
 import os
 import json
-import multiprocessing
-
+import time
 from azureml.core import Workspace, Experiment
 from azureml.core.authentication import ServicePrincipalAuthentication
 from azureml.pipeline.core import PipelineRun
@@ -10,11 +8,10 @@ from azureml.exceptions import AuthenticationException, ProjectSystemException, 
 from adal.adal_error import AdalError
 from msrest.exceptions import AuthenticationError
 from json import JSONDecodeError
-from actionutils import AMLConfigurationException, AMLExperimentConfigurationException, required_parameters_provided, mask_parameter, convert_to_markdown, load_pipeline_yaml, load_runconfig_yaml, load_runconfig_python
+from utils import AMLConfigurationException, AMLExperimentConfigurationException, required_parameters_provided, mask_parameter, convert_to_markdown, load_pipeline_yaml, load_runconfig_yaml, load_runconfig_python
 
-def submitRun(args):
-    ws,parameters = args[0],args[1];
-    
+
+def submitRun(ws, parameters):
     # Create experiment
     print("::debug::Creating experiment")
     try:
@@ -37,34 +34,34 @@ def submitRun(args):
         raise AMLExperimentConfigurationException(f"Could not create an experiment with the specified name {experiment_name}: {exception}")
 
     # Loading run config
-    print("debug::Loading run config")
+    print("::debug::Loading run config")
     run_config = None
     if run_config is None:
         # Loading run config from runconfig yaml file
-        print("Loading run config from runconfig yaml file")
+        print("::debug::Loading run config from runconfig yaml file")
         run_config = load_runconfig_yaml(
-            runconfig_yaml_file=parameters.get("runconfig_yaml_file", "train/run_config.yml")
+            runconfig_yaml_file=parameters.get("runconfig_yaml_file", "code/train/run_config.yml")
         )
     if run_config is None:
         # Loading run config from pipeline yaml file
         print("::debug::Loading run config from pipeline yaml file")
         run_config = load_pipeline_yaml(
             workspace=ws,
-            pipeline_yaml_file=parameters.get("pipeline_yaml_file", "train/pipeline.yml")
+            pipeline_yaml_file=parameters.get("pipeline_yaml_file", "code/train/pipeline.yml")
         )
     if run_config is None:
         # Loading run config from python runconfig file
         print("::debug::Loading run config from python runconfig file")
         run_config = load_runconfig_python(
             workspace=ws,
-            runconfig_python_file=parameters.get("runconfig_python_file", "train/run_config.py"),
+            runconfig_python_file=parameters.get("runconfig_python_file", "code/train/run_config.py"),
             runconfig_python_function_name=parameters.get("runconfig_python_function_name", "main")
         )
     if run_config is None:
         # Loading values for errors
-        pipeline_yaml_file = parameters.get("pipeline_yaml_file", "train/pipeline.yml")
-        runconfig_yaml_file = parameters.get("runconfig_yaml_file", "train/run_config.yml")
-        runconfig_python_file = parameters.get("runconfig_python_file", "train/run_config.py")
+        pipeline_yaml_file = parameters.get("pipeline_yaml_file", "code/train/pipeline.yml")
+        runconfig_yaml_file = parameters.get("runconfig_yaml_file", "code/train/run_config.yml")
+        runconfig_python_file = parameters.get("runconfig_python_file", "code/train/run_config.py")
         runconfig_python_function_name = parameters.get("runconfig_python_function_name", "main")
 
         print(f"::error::Error when loading runconfig yaml definition your repository (Path: /{runconfig_yaml_file}).")
@@ -93,17 +90,7 @@ def submitRun(args):
     print(f"::set-output name=run_id::{run.id}")
     print(f"::set-output name=run_url::{run.get_portal_url()}")
 
-    # Waiting for run to complete
-    print("::debug::Waiting for run to complete")
-    if parameters.get("wait_for_completion", True):
-        run.wait_for_completion(show_output=True)
-
-        # Creating additional outputs of finished run
-        run_metrics = run.get_metrics(recursive=True)
-        run_metrics_markdown = convert_to_markdown(run_metrics)
-        print(f"::set-output name=run_metrics::{run_metrics}")
-        print(f"::set-output name=run_metrics_markdown::{run_metrics_markdown}")
-
+    # we can publish the pipeline without waiting for run to be finished. need to verify it
     # Publishing pipeline
     print("::debug::Publishing pipeline")
     if type(run) is PipelineRun and parameters.get("publish_pipeline", False):
@@ -127,7 +114,34 @@ def submitRun(args):
         print(f"::error::Could not register pipeline because you did not pass a pipeline to the action")
 
     print("::debug::Successfully finished Azure Machine Learning Train Action")
-    return True
+
+    wait_for_completion = False
+    # as we don't want to wait here, we just return the run object from here.
+    if parameters.get("wait_for_completion", True):
+        wait_for_completion = True
+
+    return (run, wait_for_completion)
+
+
+def postRun(submittedRuns_for_wait):
+    # Waiting for run to complete
+    print("::debug::Waiting for run to complete")
+    run_pending = True
+
+    while run_pending:
+        tempStack = submittedRuns_for_wait
+        for run in tempStack:
+            if run.get_status() in ['Completed', 'Failed']:
+                # Creating additional outputs of finished run
+                run_metrics = run.get_metrics(recursive=True)
+                run_metrics_markdown = convert_to_markdown(run_metrics)
+                print(f"::set-output name=run_metrics::{run_metrics}")
+                print(f"::set-output name=run_metrics_markdown::{run_metrics_markdown}")
+                submittedRuns_for_wait.remove(run)
+            time.sleep(10)  # wait for 10 seconds to check again.
+        if len(submittedRuns_for_wait) == 0:
+            run_pending = False
+
 
 def main():
     # Loading input values
@@ -163,7 +177,7 @@ def main():
             parameters = json.load(f)
     except FileNotFoundError:
         print(f"::debug::Could not find parameter file in {parameters_file_path}. Please provide a parameter file in your repository if you do not want to use default settings (e.g. .cloud/.azure/run.json).")
-        parameters = {}
+        parameters = [{}]  # we want to run atleast once with default values.
 
     # Loading Workspace
     print("::debug::Loading AML Workspace")
@@ -193,11 +207,17 @@ def main():
         print(f"::error::Workspace authorizationfailed: {exception}")
         raise ProjectSystemException
 
-    # check here the number of cpus and create pool accordingly 
-    pool = multiprocessing.Pool(processes=8)
-    tasks = [(ws,parameter) for parameter in parameters ]
-    results = pool.map(submitRun, tasks)
-    print(results)
+    submittedRuns_for_wait = []
+    for parameter in parameters:
+        run, wait_for_completion = submitRun(ws, parameter)
+
+        # add a list of tuple to be used later, we will use it to wait.
+        if wait_for_completion is True:
+            submittedRuns_for_wait.append(run)
+
+    postRun(submittedRuns_for_wait)
+    print("submission over")
+
 
 if __name__ == "__main__":
     main()
